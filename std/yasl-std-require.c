@@ -1,7 +1,4 @@
 #include <yasl_state.h>
-#include "yasl-std-require.h"
-#include "yasl-std-math.h"
-#include "yasl-std-io.h"
 #include "yasl_plat.h"
 #include "yasl_aux.h"
 
@@ -56,7 +53,6 @@ int YASL_require(struct YASL_State *S) {
 	Ss->compiler.header = S->compiler.header;
 	YASL_Table_del(Ss->vm.globals);
 	Ss->vm.globals = S->vm.globals;
-	// Ss->vm.constants = S->vm.constants;
 
 	// Load Standard Libraries
 	YASLX_decllibs(Ss);
@@ -83,6 +79,7 @@ int YASL_require(struct YASL_State *S) {
 		S->vm.headers[i] = Ss->vm.headers[i];
 		Ss->vm.headers[i] = NULL;
 	}
+	S->vm.headers_size = new_headers_size;
 
 	Ss->vm.globals = NULL;
 	Ss->vm.metatables = NULL;

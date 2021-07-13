@@ -125,6 +125,16 @@ void vm_cleanup(struct VM *const vm) {
 	io_cleanup(&vm->err);
 }
 
+void *vm_alloc_cyclic(struct VM *vm, size_t size) {
+	YASL_UNUSED(vm);
+	return malloc(size);
+}
+
+void vm_free_cyclic(struct VM *vm, void *ptr) {
+	YASL_UNUSED(vm);
+	free(ptr);
+}
+
 YASL_FORMAT_CHECK static void vm_print_err_wrapper(struct VM *vm, const char *const fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
@@ -564,7 +574,7 @@ void vm_stringify_top(struct VM *const vm) {
 		vm_CALL_now(vm);
 	}
 	if (!vm_isstr(vm)) {
-		vm_print_err_type(vm, "Could not stringify value, got: %s", vm_peektypename(vm));
+		vm_print_err_type(vm, "Could not stringify items, got: %s", vm_peektypename(vm));
 		vm_throw_err(vm, YASL_TYPE_ERROR);
 	}
 }
@@ -725,11 +735,8 @@ static void vm_SLICE(struct VM *const vm) {
 struct RC_UserData *obj_get_metatable(const struct VM *const vm, struct YASL_Object v) {
 	switch (v.type) {
 	case Y_USERDATA:
-	case Y_USERDATA_W:
 	case Y_LIST:
-	case Y_LIST_W:
 	case Y_TABLE:
-	case Y_TABLE_W:
 		return YASL_GETUSERDATA(v)->mt;
 	default:
 		return vm->builtins_htable[v.type];
@@ -765,7 +772,7 @@ static int lookup(struct VM *vm, struct YASL_Object obj, struct YASL_Table *mt, 
 		return YASL_SUCCESS;
 	}
 
-	search = YASL_Table_search_string_int(mt, "__get", strlen("__get"));
+	search = YASL_Table_search_zstring_int(mt, "__get");
 	if (search.type != Y_END) {
 		vm_push(vm, search);
 		vm_call_now_2(vm, obj, index);
@@ -784,7 +791,7 @@ static int lookup2(struct VM *vm, struct YASL_Table *mt) {
 		return YASL_SUCCESS;
 	}
 
-	search = YASL_Table_search_string_int(mt, "__get", strlen("__get"));
+	search = YASL_Table_search_zstring_int(mt, "__get");
 	if (search.type != Y_END) {
 		vm_push(vm, search);
 		vm_shifttopdown(vm, 2);
